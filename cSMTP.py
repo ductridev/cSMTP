@@ -44,10 +44,10 @@ class cSMTP():
         proxy_list = self.__load_file(proxies_file)
         for proxy in proxy_list:
             proxy_server = []
-            proxy_server['host'] = proxy.split(',')[0]
-            proxy_server['port'] = proxy.split(',')[1]
-            proxy_server['type'] = proxy.split(',')[2]
-            proxy_server['https'] = bool(proxy.split(',')[3])
+            proxy_server['host'] = proxy.split(',')[0].split(':')[0]
+            proxy_server['port'] = proxy.split(',')[0].split(':')[1]
+            proxy_server['type'] = proxy.split(',')[1]
+            proxy_server['https'] = bool(proxy.split(',')[2])
             self.proxies.append(proxy_server)
 
         # Load email list from a file
@@ -74,13 +74,13 @@ class cSMTP():
         smtp_list = self.__load_file(smtp_file)
         for stmp in smtp_list:
             smtp_server = []
-            smtp_server['host'] = stmp.split(',')[0]
-            smtp_server['port'] = stmp.split(',')[1]
-            smtp_server['user'] = stmp.split(',')[2]
-            smtp_server['password'] = stmp.split(',')[3]
-            smtp_server['from_address'] = stmp.split(',')[4]
-            smtp_server['from_name'] = stmp.split(',')[5]
-            smtp_server['tls'] = bool(stmp.split(',')[6])
+            smtp_server['host'] = stmp.split(',')[0].split('@')[0].split(':')[0]
+            smtp_server['port'] = stmp.split(',')[0].split('@')[0].split(':')[1]
+            smtp_server['user'] = stmp.split(',')[0].split('@')[1].split(':')[0]
+            smtp_server['password'] = stmp.split(',')[0].split('@')[1].split(':')[1]
+            smtp_server['from_address'] = stmp.split(',')[1].split(':')[0]
+            smtp_server['from_name'] = stmp.split(',')[1].split(':')[1]
+            smtp_server['tls'] = bool(stmp.split(',')[2])
             smtp_server['in_used'] = False
             self.smtps.append(smtp_server)
     
