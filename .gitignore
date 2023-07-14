@@ -1,2 +1,6 @@
 cSMTP
 __pycache__
+emails_list.txt
+emails_test_list.txt
+imap_list.txt
+proxies_list.txt
