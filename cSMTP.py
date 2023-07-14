@@ -8,12 +8,17 @@ from email.message import EmailMessage
 from email.mime.text import MIMEText
 import imaplib
 import email
+from pathlib import Path
+from datetime import datetime
+import signal
+
 
 class cSMTP():
-    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, subject, layout_file, num_threads = 10, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = []):
+    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, layout_file, num_threads = 10, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = []):
         '''Initializes custom SMTP class'''
         self.proxies = []
         self.smtps = []
+        self.imaps = []
         # Set the number of threads to use
         self.num_threads = num_threads
         self.sent = []
@@ -32,6 +37,11 @@ class cSMTP():
 
         # Set the subject of the email
         self.subject = subject
+        
+        # Declare the number of emails sent through proxies
+        self.num_sent_through_proxies = 0
+        # Declare the number of emails sent through SMTP servers
+        self.num_sent_through_smtp_server = 0
 
         # Set the message of the email
         with open(layout_file, 'r') as file:
@@ -41,50 +51,64 @@ class cSMTP():
         self.macro_fields = macro_fields
 
         # Load proxy list from a file
-        proxy_list = self.__load_file(proxies_file)
+        proxy_list = cSMTP.load_file(proxies_file)
         for proxy in proxy_list:
-            proxy_server = []
+            proxy_server = {}
             proxy_server['host'] = proxy.split(',')[0].split(':')[0]
             proxy_server['port'] = proxy.split(',')[0].split(':')[1]
             proxy_server['type'] = proxy.split(',')[1]
-            proxy_server['https'] = bool(proxy.split(',')[2])
+            if proxy.split(',')[2]:
+                proxy_server['https'] = bool(proxy.split(',')[2])
+            else :
+                proxy_server['https'] = False
             self.proxies.append(proxy_server)
 
         # Load email list from a file
-        self.email_list = self.__load_file(emails_file)
+        self.email_list = cSMTP.load_file(emails_file)
         emails = []
         for email in self.email_list:
-            _email = []
+            _email = {}
             _email['to_address'] = email.split(',')[0]
             _email['to_name'] = email.split(',')[0]
             emails.append(_email)
         self.email_list = emails
 
         # Load email test list from a file
-        self.email_test_list = self.__load_file(emails_test_file)
+        self.email_test_list = cSMTP.load_file(emails_test_file)
         test_emails = []
         for test_email in self.email_test_list:
-            _test_email = []
+            _test_email = {}
             _test_email['to_address'] = test_email.split(',')[0]
             _test_email['to_name'] = test_email.split(',')[0]
             test_emails.append(_test_email)
         self.email_test_list = test_emails
 
         # Load SMTP list from a file
-        smtp_list = self.__load_file(smtp_file)
+        smtp_list = cSMTP.load_file(smtp_file)
         for stmp in smtp_list:
-            smtp_server = []
-            smtp_server['host'] = stmp.split(',')[0].split('@')[0].split(':')[0]
-            smtp_server['port'] = stmp.split(',')[0].split('@')[0].split(':')[1]
-            smtp_server['user'] = stmp.split(',')[0].split('@')[1].split(':')[0]
-            smtp_server['password'] = stmp.split(',')[0].split('@')[1].split(':')[1]
+            smtp_server = {}
+            smtp_server['host'] = stmp.split(',')[0].split('@', 1)[0].split(':')[0]
+            smtp_server['port'] = stmp.split(',')[0].split('@', 1)[0].split(':')[1]
+            smtp_server['user'] = stmp.split(',')[0].split('@', 1)[1].split(':')[0]
+            smtp_server['password'] = stmp.split(',')[0].split('@', 1)[1].split(':')[1]
             smtp_server['from_address'] = stmp.split(',')[1].split(':')[0]
             smtp_server['from_name'] = stmp.split(',')[1].split(':')[1]
             smtp_server['tls'] = bool(stmp.split(',')[2])
             smtp_server['in_used'] = False
             self.smtps.append(smtp_server)
-    
-    def __load_file(self, filename):
+
+        # Load IMAP list from a file
+        imap_list = cSMTP.load_file(imap_file)
+        for imap in imap_list:
+            imap_server = {}
+            imap_server['host'] = imap.split(',')[0].split('@', 1)[0].split(':')[0]
+            imap_server['port'] = imap.split(',')[0].split('@', 1)[0].split(':')[1]
+            imap_server['user'] = imap.split(',')[0].split('@', 1)[1].split(':')[0]
+            imap_server['password'] = imap.split(',')[0].split('@', 1)[1].split(':')[1]
+            self.imaps.append(imap_server)
+
+    @staticmethod
+    def load_file(filename):
         '''Define a function to load file with TXT and CSV extension'''
         lines = []
         with open(filename, 'r') as f:
@@ -114,74 +138,76 @@ class cSMTP():
         # Update the number of emails sent for this proxy
         if proxy:
             self.sent['num_sent_with_proxy'] += 1
+            self.num_sent_through_proxies += 1
         else:
             self.sent['num_sent_without_proxy'] += 1
+            self.num_sent_through_smtp_server += 1
         # Close the SMTP connection
         smtp_conn.quit()
 
-    def __send_emails(self, email_list, smtp_list, proxies, lock):
+    def __send_emails(self, email_list, smtp_list, proxies):
         '''Define a function to start send batch of emails'''
         msg = EmailMessage()
         i = 0
         
         # Loop through the email list
         for email in email_list:
-            # Choose an available proxy
-            proxy = self.__choose_proxy(proxies)
-            if proxy:
-                if proxy['type'] == 'socks4':
-                    socks.set_default_proxy(socks.PROXY_TYPE_SOCKS4)
-                elif proxy['type'] == 'socks5':
-                    socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5)
-                elif proxy['type'] == 'http':
-                    socks.set_default_proxy(socks.PROXY_TYPE_HTTP)
-                else:
-                    raise TypeError("Unknown proxy type")
-
-            # Choose an available SMTP server
-            smtp_server = self.__choose_smtp_server(smtp_list)
-            if smtp_server is None:
-                # No available SMTP servers found, exit the loop
-                print("No available SMTP servers found.")
-                continue
-            smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
-            if proxy:
-                smtpsock = socks.socksocket()
-                smtpsock.connect((smtp_server['host'], smtp_server['port']))
-                smtp_conn.sock = smtpsock
-            if smtp_server['tls']:
-                smtp_conn.starttls()
-            smtp_conn.login(smtp_server['user'], smtp_server['password'])
-            smtp_server['in_used'] = True
-
-            if i % self.seed_interval == 0:
-                self._test_seed(smtp_server['from_address'], smtp_server['from_name'], smtp_conn)
-
-            # Acquire the lock to send an email
-            lock.acquire()
-            try:
+            while True:
+                # Choose an available proxy
+                proxy = self.__choose_proxy(proxies)
                 if proxy:
-                    # Check if the number of emails sent per session has been exceeded
-                    if self.sent["num_sent_with_proxy"] < self.max_emails_per_session:
-                        self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, True)
-                    elif self.sent['num_sent_with_proxy'] == self.max_emails_per_session:
-                        self.timeoutProxies[proxy]['time_reset'] = time.time() + 3600
-                        self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, True)
-                else:
-                    # Check if the max hourly rate per live SMTP has been exceeded
-                    if self.sent['num_sent_without_proxy'] < self.max_emails_per_hour:
-                        self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
-                    elif self.sent['num_sent_without_proxy'] == self.max_emails_per_hour:
-                        self.timeoutSMTPServers[smtp_server]['time_reset'] = time.time(
-                        ) + 3600
-                        self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
-            except Exception as e:
-                # Log the error
-                print(f"Error sending email: {e}")
-                smtp_conn.close()
-            finally:
-                # Release the lock
-                lock.release()
+                    if proxy['type'] == 'socks4':
+                        socks.set_default_proxy(socks.PROXY_TYPE_SOCKS4)
+                    elif proxy['type'] == 'socks5':
+                        socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5)
+                    elif proxy['type'] == 'http':
+                        socks.set_default_proxy(socks.PROXY_TYPE_HTTP)
+                    else:
+                        raise TypeError("Unknown proxy type")
+
+                # Choose an available SMTP server
+                smtp_server = self.__choose_smtp_server(smtp_list)
+                if smtp_server is None:
+                    # No available SMTP servers found, exit the loop
+                    print("No available SMTP servers found.")
+                    print("Will retry after 3 seconds.")
+                    time.sleep(3)
+                    continue
+                smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
+                if proxy:
+                    smtpsock = socks.socksocket()
+                    smtpsock.connect((smtp_server['host'], smtp_server['port']))
+                    smtp_conn.sock = smtpsock
+                if smtp_server['tls']:
+                    smtp_conn.starttls()
+                smtp_conn.login(smtp_server['user'], smtp_server['password'])
+                smtp_server['in_used'] = True
+
+                if i % self.seed_interval == 0:
+                    self.__test_seed(smtp_server['from_address'], smtp_server['from_name'], smtp_conn)
+
+                try:
+                    if proxy:
+                        # Check if the number of emails sent per session has been exceeded
+                        if self.sent["num_sent_with_proxy"] < self.max_emails_per_session:
+                            self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, True)
+                        elif self.sent['num_sent_with_proxy'] == self.max_emails_per_session:
+                            self.timeoutProxies[proxy]['time_reset'] = time.time() + 3600
+                            self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, True)
+                    else:
+                        # Check if the max hourly rate per live SMTP has been exceeded
+                        if self.sent['num_sent_without_proxy'] < self.max_emails_per_hour:
+                            self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
+                        elif self.sent['num_sent_without_proxy'] == self.max_emails_per_hour:
+                            self.timeoutSMTPServers[smtp_server]['time_reset'] = time.time(
+                            ) + 3600
+                            self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
+                except Exception as e:
+                    # Log the error
+                    print(f"Error sending email: {e}")
+                    smtp_conn.close()
+                finally:
+                    break
 
     def __check_smtp_server(self, smtp_server):
         '''Define a function to check if SMTP server is active?'''
@@ -206,7 +232,7 @@ class cSMTP():
                     if self.timeoutSMTPServers[smtp_server]['time_reset'] >= time.time():
                         del self.timeoutSMTPServers[smtp_server]
                         # Reset the number of emails sent without proxy
-                        self.sent['num_sent_without_proxy'] = 0
+                        self.sent['num_sent_with_proxy'] = 0
 
                         # SMTP server is available, return its address
                         return smtp_server
@@ -218,7 +244,7 @@ class cSMTP():
         # No available SMTP server found
         return None
 
-    def __check_proxy(proxy):
+    def __check_proxy(self, proxy):
         '''Define a function to check if proxy is working or not?'''
         try:
             if proxy['https']:
@@ -260,23 +286,7 @@ class cSMTP():
         k, m = divmod(len(list), self.num_threads)
         return [list[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(self.num_threads)]
 
-    def create_thread(self):
-        '''Define a function to create a thread'''
-        sublists_smtps = self.__even_split(self.smtps)
-        sublists_proxies = self.__even_split(self.proxies)
-        for i in range(0, len(sublists_smtps)):
-            sublist_smtps = sublists_smtps[i]
-            sublist_proxies = sublists_proxies[i]
-
-            # Set up the threading lock
-            lock = threading.Lock()
-            # Create the thread
-            thread = threading.Thread(
-                target=self.__send_emails, args=(sublist_smtps, sublist_proxies, lock))
-            # Start the thread
-            thread.start()
-
-    def _test_seed(self, from_address, from_name, smtp_conn):
+    def __test_seed(self, from_address, from_name, smtp_conn):
         try:
             html = "This is a test email message."
             msg = EmailMessage()
@@ -290,47 +300,109 @@ class cSMTP():
         except Exception as e:
             print(f"Error sending test email: {e}")
             return False
-
-    @staticmethod
-    def verify_email_list(email_list, smtp_host, imap_host, smtp_username, smtp_password, imap_username, imap_password, from_address, from_name = '', smtp_port = 587, imap_port=993, verify=True):
+        
+    def __verify_email_list(self, imap_host, imap_username, imap_password, imap_port=993, verify=True):
         """
         Verifies a list of email addresses, checking for bounces and replies from the email server,
         and creating a list of dead email addresses. Set Verify to False to skip this step. If provided with
         a username and password, email authentication will occur in the verification step.
         """
+        print("Finding dead email addresses...")
         dead_emails = []  # List of dead email addresses
-        for email in email_list:
+        live_emails = [] # List of live email addresses
+
+        for email in self.email_list:
             try:
                 if verify:
-                    # Authenticate and send dummy email to verify email
-                    msg = EmailMessage()
-                    msg['Subject'] = 'Verify dead email address.'
-                    msg['From'] = "{} <{}>".format(from_name, from_address)
-                    msg['To'] = email
-                    smtp_server = smtplib.SMTP(smtp_host, smtp_port)
-                    smtp_server.starttls()
-                    smtp_server.login(smtp_username, smtp_password)  # Only needed if email authentication is required
-                    smtp_server.send_message(msg)
-                    smtp_server.quit()
-
                     # Check for any bounced messages
                     imap_server = imaplib.IMAP4_SSL(imap_host, imap_port)
                     imap_server.login(imap_username, imap_password)  # Only needed if email authentication is required
                     imap_server.select('INBOX')
-                    search_criteria = f'(FROM "{email}" SUBJECT "Delivery Status Notification" BODY "failure")'
-                    search_criteria = f'FROM "Mail Delivery Subsystem" SUBJECT "Delivery Status Notification" TO "{email}"'
+
+                    search_criteria = f'(OR SUBJECT "fail" (OR SUBJECT "undeliver" SUBJECT "returned")) HEADER "Content-Type" "multipart/report; report-type=delivery-status" HEADER "X-Failed-Recipients" "{email["from_address"]}"'
                     result, data = imap_server.search(None, search_criteria)
                     if result == 'OK' and data[0] != b'':
                         # Email bounced - add email address to list of dead emails
-                        dead_emails.append(email)
+                        dead_emails.append(email["from_address"])
+                        print(f'Dead email: {email["from_address"]}')
+                    else:
+                        live_emails.append(email["from_address"])
 
             except Exception as e:
                 # Error occurred - consider email address dead and add to list of dead emails
-                dead_emails.append(email)
-                print(f"Error verifying email {email}: {str(e)}")
+                dead_emails.append(email["from_address"])
+                print(f'Error verifying email {email["from_address"]}: {str(e)}')
 
+        print("Checked all dead email addresses!")
         # Return list of dead email addresses
-        return dead_emails
+        return dead_emails, live_emails
+    
+    def create_thread(self):
+        '''Define a function to create a thread'''
+        # Divide big list into many sublists
+        sublists_smtps = self.__even_split(self.smtps)
+        sublists_proxies = self.__even_split(self.proxies)
+        sublists_mails = self.__even_split(self.email_list)
+        sublists_test_mails = self.__even_split(self.email_test_list)
+
+        # Start sending emails on different threads
+        for i in range(0, len(sublists_smtps)):
+            sublist_smtps = sublists_smtps[i]
+            sublist_proxies = sublists_proxies[i]
+            sublist_mails = sublists_mails[i]
+            sublist_test_mails = sublists_test_mails[i]
+
+            # Create the thread
+            thread = threading.Thread(
+                target=self.__send_emails, args=(sublist_mails, sublist_smtps, sublist_proxies), daemon=True)
+            # Start the thread
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            thread.start()
+            thread.join()
+
+        time.sleep(15)
+
+        dead_emails_list = []
+        live_emails_list = []
+
+        for imap_server in self.imaps:
+            dead_emails, live_emails = self.verify_email_list(imap_server['host'], imap_server['username'], imap_server['password'], imap_server['port'])
+            dead_emails_list += dead_emails
+            live_emails_list += live_emails
+        
+        return dead_emails_list, live_emails_list
+    
+    def start(self):
+        '''Start sending emails'''
+        print('Creating many threads to send emails...')
+        dead_emails_list, live_emails_list = self.create_thread()
+
+        # Print the reporting
+        print('All emails had been sent. There is the report: ')
+        print(f'Number of dead emails: {len(dead_emails_list)}')
+        print(f'Number of sent emails: {len(live_emails_list)}')
+        print(f'Number of emails sent without proxy: {self.num_sent_through_smtp_server}')
+        print(f'Number of emails sent with proxy: {self.num_sent_through_proxies}')
+
+        # Save dead emails to disk
+        print(f'Saving dead emails to disk...')
+        dead_emails_filename = "/dead_emails_" + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        dead_emails_path = str(Path(__file__).parent.absolute()) + dead_emails_filename
+        with open(dead_emails_path, 'w') as fp:
+            for dead_email in dead_emails_list:
+                # write each item on a new line
+                fp.write("%s\n" % dead_email)
+        print(f'Dead emails has been saved to disk at {dead_emails_path}')
+
+        # Save live emails to disk
+        print(f'Saving live emails to disk...')
+        live_emails_filename = "/live_emails_" + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        live_mails_path = str(Path(__file__).parent.absolute()) + live_emails_filename
+        with open(live_mails_path, 'w') as fp:
+            for live_email in live_emails_list:
+                # write each item on a new line
+                fp.write("%s\n" % live_email)
+        print(f'Live emails has been saved to disk at {live_mails_path}')
     
     @staticmethod
     def auto_unsubscribe(imap_server, username, password, unsubscribe_link):

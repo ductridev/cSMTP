@@ -1,0 +1,3 @@
+mail.cannalords.com:465@testing1@cannalords.com:W33d420420!,admin@cannalords.com:admin1,tls
+mail.cannalords.com:465@testing2@cannalords.com:W33d420420!,admin@cannalords.com:admins2,tls
+mail.cannalords.com:465@testing3@cannalords.com:W33d420420!,admin@cannalords.com:admin3,tls
