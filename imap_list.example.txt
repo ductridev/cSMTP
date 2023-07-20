@@ -1,1 +1,2 @@
-estar-solutions.com:993@trihoang@estar-solutions.com:0c$p5@^ld;#0
+IMPORTANT : host:port@username:password,from_email:from_name,tlsOrNot (true = tls, false = normal)
+EXAMPLE : imap.abc.com:123@username@example.com:hereispassword,displaymail@example.com:displayname,true

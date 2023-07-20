@@ -1,0 +1,2 @@
+IMPORTANT : host:port@username:password,from_email:from_name,tlsOrNot (true = tls, false = normal)
+EXAMPLE : smtp.abc.com:123@username@example.com:hereispassword,displaymail@example.com:displayname,true

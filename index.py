@@ -8,6 +8,7 @@ if __name__ == '__main__':
                  'smtp_list.txt',
                  'imap_list.txt',
                  'test cSMTP',
-                 './template/test.html'
+                 './template/test.html',
+                 skip_test=True
                  )
     smtp.start()

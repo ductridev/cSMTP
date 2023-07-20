@@ -1,2 +1,2 @@
-67.220.81.2:13939,socks4,true
-208.99.88.129:13939,socks4,true
+IMPORTANT : host:port,type (Only accept socks4, socks5, http), httpsOrNot (true = https, false = http)
+EXAMPLE: 123.12.12.123:12345,socks4,true

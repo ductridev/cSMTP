@@ -1,3 +1,11 @@
-mail.cannalords.com:465@testing1@cannalords.com:W33d420420!,admin@cannalords.com:admin1,tls
-mail.cannalords.com:465@testing2@cannalords.com:W33d420420!,admin@cannalords.com:admins2,tls
-mail.cannalords.com:465@testing3@cannalords.com:W33d420420!,admin@cannalords.com:admin3,tls
+smtp.gmail.com:587@emmalynneskabo@gmail.com:cfjxujghefjxnacr,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@trixyesquivez@gmail.com:fshriiqyxxbxbjmb,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@altonzizzo@gmail.com:tfqkberoggeuytjg,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@manisclark0@gmail.com:aikvrphnvclyqhwv,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@carstenwinchel@gmail.com:harllquesyqcvead,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@pegeenellett@gmail.com:jsxdjlfshtfsmigh,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@cassiorem6@gmail.com:mljnvuxjlpztgnzg,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@harrietteborsellino@gmail.com:ftzvtnfqlptbrlme,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@praneetfcavaluzzi@gmail.com:ndptidhdctrcoeog,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@reynoldkiffe@gmail.com:ytskdqgnrqlbvfsq,admin@louddc.com:LoudDC,true
+smtp.gmail.com:587@arvisoivan84@gmail.com:vhqlcmtxkblbkvbk,admin@louddc.com:LoudDC,true
