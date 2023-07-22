@@ -1,14 +1,28 @@
 from cSMTP import cSMTP
-import csv
+import yaml
+from yaml.loader import SafeLoader
+import json
 
 if __name__ == '__main__':
-    smtp = cSMTP('proxies_list.txt',
-                 'emails_list.txt',
-                 'emails_test_list.txt',
-                 'smtp_list.txt',
-                 'imap_list.txt',
-                 'test cSMTP',
-                 './template/test.html',
-                 skip_test=True
-                 )
-    smtp.start()
+    try:
+        with open('configs.yaml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+
+            smtp = cSMTP(proxies_file=data['proxies_file'],
+                        emails_file=data['emails_file'],
+                        emails_test_file=data['emails_test_file'],
+                        smtp_file=data['smtp_file'],
+                        imap_file=data['imap_file'],
+                        subject=data['subject'],
+                        layout_file=data['layout_file'],
+                        num_threads=data['num_threads'],
+                        max_emails_per_session=data['max_emails_per_session'],
+                        max_emails_per_hour=data['max_emails_per_hour'],
+                        seed_interval=data['seed_interval'],
+                        macro_fields=data['macro_fields'],
+                        skip_test=data['skip_test'],
+                        no_real_send=data['no_real_send']
+                        )
+            smtp.start()
+    except Exception as e:
+        print(e)
