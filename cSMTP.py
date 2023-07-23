@@ -148,7 +148,7 @@ class cSMTP():
             if self.html_email:
                 msg.add_alternative(MIMEText(self.message, 'html'), subtype='html')
             else:
-                msg.set_content(MIMEText(self.message))
+                msg.set_content(self.message)
             smtp_conn.send_message(msg, from_address, to_address)
             del msg['To']
             del msg['From']
@@ -338,7 +338,7 @@ class cSMTP():
             if self.html_email:
                 msg.add_alternative(MIMEText(html, "html"), subtype='html')
             else:
-                msg.set_content(MIMEText(html))
+                msg.set_content(html)
             msg['Subject'] = "This is a test email message."
             msg['From'] = "{} <{}>".format(from_name, from_address)
             for email_test in self.email_test_list:
