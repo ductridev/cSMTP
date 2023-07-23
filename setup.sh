@@ -12,4 +12,4 @@ echo Virtual environment is created!
 echo Installing requirements...
 pip3 install -r $REQUIREMENTS
 
-echo To activate the virtual environment please run the following command: $VENV_NAME/bin/activate
+echo To activate the virtual environment please run the following command: source $VENV_NAME/bin/activate
