@@ -14,14 +14,15 @@ if __name__ == '__main__':
                         smtp_file=data['smtp_file'],
                         imap_file=data['imap_file'],
                         subject=data['subject'],
-                        layout_file=data['layout_file'],
+                        message_file=data['message_file'],
                         num_threads=data['num_threads'],
                         max_emails_per_session=data['max_emails_per_session'],
                         max_emails_per_hour=data['max_emails_per_hour'],
                         seed_interval=data['seed_interval'],
                         macro_fields=data['macro_fields'],
                         skip_test=data['skip_test'],
-                        no_real_send=data['no_real_send']
+                        no_real_send=data['no_real_send'],
+                        html_email=data['html_email']
                         )
             smtp.start()
     except Exception as e:

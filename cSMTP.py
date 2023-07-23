@@ -16,7 +16,7 @@ import socket
 import numpy as np
 
 class cSMTP():
-    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, layout_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False):
+    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, message_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False, html_email=False):
         '''Initializes custom SMTP class'''
         self.proxies = []
         self.smtps = []
@@ -29,6 +29,7 @@ class cSMTP():
         # Define timeout SMTP server and Proxy when exceeded number of emails
         self.timeoutSMTPServers = []
         self.timeoutProxies = []
+        self.html_email = html_email
 
         # Set the number of seed emails to send after interval of emails sent
         self.seed_interval = seed_interval
@@ -54,7 +55,7 @@ class cSMTP():
         self.no_real_send = no_real_send
 
         # Set the message of the email
-        with open(layout_file, 'r') as file:
+        with open(message_file, 'r') as file:
             self.message = file.read()
 
         # Define macro fields
@@ -144,7 +145,10 @@ class cSMTP():
             # Send the email
             msg['From'] = "{} <{}>".format(from_name, from_address)
             msg['To'] = "{} <{}>".format(to_name, to_address)
-            msg.add_alternative(MIMEText(self.message, 'html'), subtype='html')
+            if self.html_email:
+                msg.add_alternative(MIMEText(self.message, 'html'), subtype='html')
+            else:
+                msg.add_alternative(MIMEText(self.message))
             smtp_conn.send_message(msg, from_address, to_address)
             del msg['To']
             del msg['From']
@@ -331,7 +335,10 @@ class cSMTP():
         try:
             html = "This is a test email message."
             msg = EmailMessage()
-            msg.add_alternative(MIMEText(html, "html"), subtype='html')
+            if self.html_email:
+                msg.add_alternative(MIMEText(html, "html"), subtype='html')
+            else:
+                msg.add_alternative(MIMEText(html))
             msg['Subject'] = "This is a test email message."
             msg['From'] = "{} <{}>".format(from_name, from_address)
             for email_test in self.email_test_list:

@@ -4,7 +4,7 @@ emails_test_file: "emails_test_list.txt"
 smtp_file: "smtp_list.txt"
 imap_file: "imap_list.txt"
 subject: "Mail sent with cSMTP"
-layout_file: "./template/message.html"
+message_file: "./template/message.html"
 num_threads: 2
 max_emails_per_session: 500
 max_emails_per_hour: 100
@@ -12,3 +12,4 @@ seed_interval: 5
 macro_fields: []
 skip_test: True
 no_real_send: False
+html_email: False
