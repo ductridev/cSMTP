@@ -14,6 +14,7 @@ import signal
 import traceback
 import socket
 import numpy as np
+import random
 
 class cSMTP():
     def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, message_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False, html_email=False):
@@ -140,7 +141,12 @@ class cSMTP():
         try:
             # Process Macros
             for macro_field in self.macro_fields:
-                self.message = self.message.replace(f"{{{macro_field['key']}}}", macro_field['value'])
+                macro_value = ""
+                if len(macro_field['value']) > 0:
+                    macro_value = random.choices(macro_field['value'])[0]
+                else:
+                    macro_value = macro_field['value']
+                self.message = self.message.replace(f"{{{macro_field['key']}}}", macro_value)
             
             # Send the email
             msg['From'] = "{} <{}>".format(from_name, from_address)
@@ -164,7 +170,7 @@ class cSMTP():
             print(f"Email sent to {to_address} successfully")
         except Exception as e:
             smtp_conn.quit()
-            print(traceback.print_exc(e))
+            traceback.print_exc(e)
 
     def __send_emails(self, email_list, smtp_list, proxies):
         '''Define a function to start send batch of emails'''
@@ -248,7 +254,7 @@ class cSMTP():
                                 self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
                     except Exception as e:
                         # Log the error
-                        print(f"Error sending email: {traceback.print_exc(e)}")
+                        traceback.print_exc(e)
                         smtp_conn.close()
                 break
 
@@ -347,7 +353,7 @@ class cSMTP():
                 del msg['To']
             return True
         except Exception as e:
-            print(f"Error sending test email: {traceback.print_exc(e)}")
+            traceback.print_exc(e)
             return False
         
     def __verify_email_list(self, imap_host, imap_username, imap_password, imap_port=993, verify=True):
