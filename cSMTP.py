@@ -168,8 +168,28 @@ class cSMTP():
             # Close the SMTP connection
             smtp_conn.quit()
             print(f"Email sent to {to_address} successfully")
-        except Exception as e:
+        except smtplib.SMTPResponseException as e:
             smtp_conn.quit()
+            traceback.print_exc(e)
+        except smtplib.SMTPAuthenticationError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+        except smtplib.SMTPSenderRefused as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+        except smtplib.SMTPServerDisconnected as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+        except smtplib.SMTPNotSupportedError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+        except smtplib.SMTPHeloError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+        except smtplib.SMTPConnectError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+        except Exception as e:
             traceback.print_exc(e)
 
     def __send_emails(self, email_list, smtp_list, proxies):
@@ -252,10 +272,29 @@ class cSMTP():
                                 self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time(
                                 ) + 3600
                                 self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
-                    except Exception as e:
-                        # Log the error
+                    except smtplib.SMTPResponseException as e:
+                        smtp_conn.quit()
                         traceback.print_exc(e)
-                        smtp_conn.close()
+                    except smtplib.SMTPAuthenticationError as e:
+                        smtp_conn.quit()
+                        traceback.print_exc(e)
+                    except smtplib.SMTPSenderRefused as e:
+                        smtp_conn.quit()
+                        traceback.print_exc(e)
+                    except smtplib.SMTPServerDisconnected as e:
+                        smtp_conn.quit()
+                        traceback.print_exc(e)
+                    except smtplib.SMTPNotSupportedError as e:
+                        smtp_conn.quit()
+                        traceback.print_exc(e)
+                    except smtplib.SMTPHeloError as e:
+                        smtp_conn.quit()
+                        traceback.print_exc(e)
+                    except smtplib.SMTPConnectError as e:
+                        smtp_conn.quit()
+                        traceback.print_exc(e)
+                    except Exception as e:
+                        traceback.print_exc(e)
                 break
 
     def __check_smtp_server(self, smtp_server):
@@ -352,6 +391,34 @@ class cSMTP():
                 smtp_conn.send_message(msg, from_address, email_test['to_address'])
                 del msg['To']
             return True
+        except smtplib.SMTPResponseException as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+            return False
+        except smtplib.SMTPAuthenticationError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+            return False
+        except smtplib.SMTPSenderRefused as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+            return False
+        except smtplib.SMTPServerDisconnected as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+            return False
+        except smtplib.SMTPNotSupportedError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+            return False
+        except smtplib.SMTPHeloError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+            return False
+        except smtplib.SMTPConnectError as e:
+            smtp_conn.quit()
+            traceback.print_exc(e)
+            return False
         except Exception as e:
             traceback.print_exc(e)
             return False
