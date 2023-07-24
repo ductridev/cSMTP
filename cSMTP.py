@@ -151,6 +151,7 @@ class cSMTP():
             # Send the email
             msg['From'] = "{} <{}>".format(from_name, from_address)
             msg['To'] = "{} <{}>".format(to_name, to_address)
+            msg['Subject'] = self.subject
             if self.html_email:
                 msg.add_alternative(MIMEText(self.message, 'html'), subtype='html')
             else:
