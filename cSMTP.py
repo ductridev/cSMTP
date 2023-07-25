@@ -69,6 +69,7 @@ class cSMTP():
             proxy_server['host'] = proxy.split(',')[0].split(':')[0]
             proxy_server['port'] = proxy.split(',')[0].split(':')[1]
             proxy_server['type'] = proxy.split(',')[1]
+            proxy_server['proxy_without_smtp'] = proxy.split(',')[2]
             if proxy.split(',')[2]:
                 proxy_server['https'] = bool(proxy.split(',')[2])
             else :
@@ -204,28 +205,31 @@ class cSMTP():
             while True:
                 # Choose an available proxy
                 proxy = self.__choose_proxy(proxies)
-                if proxy:
-                    if proxy['type'] == 'socks4':
-                        socks.set_default_proxy(socks.PROXY_TYPE_SOCKS4, proxy['host'], int(proxy['port']))
-                        socks.wrap_module(smtplib)
-                    elif proxy['type'] == 'socks5':
-                        socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5, proxy['host'], int(proxy['port']))
-                        socks.wrap_module(smtplib)
-                    elif proxy['type'] == 'http':
-                        socks.set_default_proxy(socks.PROXY_TYPE_HTTP, proxy['host'], int(proxy['port']))
-                        socks.wrap_module(smtplib)
-                    else:
-                        raise TypeError("Unknown proxy type")
-
-                # Choose an available SMTP server
-                smtp_server = self.__choose_smtp_server(smtp_list)
-                if smtp_server is None:
-                    # No available SMTP servers found, exit the loop
-                    print("No available SMTP servers found.")
-                    print("Will retry after 3 seconds.")
-                    time.sleep(3)
-                    continue
-                smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
+                if proxy['proxy_without_smtp'] != True:
+                    if proxy:
+                        if proxy['type'] == 'socks4':
+                            socks.set_default_proxy(socks.PROXY_TYPE_SOCKS4, proxy['host'], int(proxy['port']))
+                            socks.wrap_module(smtplib)
+                        elif proxy['type'] == 'socks5':
+                            socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5, proxy['host'], int(proxy['port']))
+                            socks.wrap_module(smtplib)
+                        elif proxy['type'] == 'http':
+                            socks.set_default_proxy(socks.PROXY_TYPE_HTTP, proxy['host'], int(proxy['port']))
+                            socks.wrap_module(smtplib)
+                        else:
+                            raise TypeError("Unknown proxy type")
+                
+                    # Choose an available SMTP server
+                    smtp_server = self.__choose_smtp_server(smtp_list)
+                    if smtp_server is None:
+                        # No available SMTP servers found, exit the loop
+                        print("No available SMTP servers found.")
+                        print("Will retry after 3 seconds.")
+                        time.sleep(3)
+                        continue
+                    smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
+                else:
+                    smtp_conn = smtplib.SMTP(proxy['host'], proxy['port'], timeout=30)
 
                 try:
                     print(f"Logging in to the SMTP server as {smtp_server['user']}:{smtp_server['password']}")
