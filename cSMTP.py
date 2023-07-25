@@ -159,6 +159,7 @@ class cSMTP():
             smtp_conn.send_message(msg, from_address, to_address)
             del msg['To']
             del msg['From']
+            del msg['Subject']
             # Update the number of emails sent for this proxy
             if proxy:
                 self.sent['num_sent_with_proxy'] += 1
