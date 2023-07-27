@@ -1,7 +1,7 @@
 from cSMTP import cSMTP
 import yaml
 from yaml.loader import SafeLoader
-import json
+import traceback
 
 if __name__ == '__main__':
     try:
@@ -22,8 +22,10 @@ if __name__ == '__main__':
                         macro_fields=data['macro_fields'],
                         skip_test=data['skip_test'],
                         no_real_send=data['no_real_send'],
-                        html_email=data['html_email']
+                        html_email=data['html_email'],
+                        skip_verify=data['skip_verify'],
                         )
             smtp.start()
     except Exception as e:
         print(e)
+        traceback.print_exception(e)

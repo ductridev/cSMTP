@@ -13,3 +13,4 @@ macro_fields: [{'key':'hello1','value':['Hi','Hey','Whats up']},{'key':'hello2',
 skip_test: True
 no_real_send: False
 html_email: False
+skip_verify: False
