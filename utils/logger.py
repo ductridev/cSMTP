@@ -2,7 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 logpath = "logs/"
-filename = "log.txt"
+filename = "logs.txt"
 
 logging.basicConfig(handlers=[RotatingFileHandler(filename=logpath+filename,
                                                   mode='w', maxBytes=512000, backupCount=4)], level=logging.INFO,
