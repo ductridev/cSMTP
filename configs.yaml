@@ -5,9 +5,9 @@ smtp_file: "smtp_list.txt"
 imap_file: "imap_list.txt"
 subject: "Mail sent with cSMTP"
 message_file: "./template/message.txt"
-num_threads: 2
-max_emails_per_session: 500
-max_emails_per_hour: 100
+num_threads: 1
+max_emails_per_session: 1
+max_emails_per_hour: 1
 seed_interval: 5
 macro_fields: [{'key':'hello1','value':['Hi','Hey','Whats up']},{'key':'hello2','value':['Bye','Adios','See you later']}]
 skip_test: True
