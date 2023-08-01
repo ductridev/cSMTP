@@ -1,5 +1,5 @@
 import smtplib
-import concurrent.futures
+import threading
 import time
 import requests
 import socks
@@ -208,6 +208,7 @@ class cSMTP():
             while True:
                 # Choose an available proxy
                 proxy = self.__choose_proxy(proxies)
+
                 if proxy is not None: 
                     if proxy['proxy_without_smtp'] == False:
                         if proxy['type'] == 'socks4':
@@ -224,7 +225,8 @@ class cSMTP():
                     else:
                         smtp_conn = smtplib.SMTP(proxy['host'], proxy['port'], timeout=30)
                 else:
-                    logger.warn("No proxy is available! Please check proxy settings and try again")
+                    logger.warn("No proxies found.")
+                    logger.warn("Will try to continue send email without proxy.")
 
                 # Choose an available SMTP server
                 smtp_server = self.__choose_smtp_server(smtp_list)
@@ -327,16 +329,14 @@ class cSMTP():
             # Check if the SMTP server is available
             if self.__check_smtp_server(smtp_server) and smtp_server['in_used'] == False:
                 if smtp_server in self.timeoutSMTPServers:
-                    if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] > time.time() + 60:
+                    if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] < time.time():
                         if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] == self.max_emails_per_hour:
                             self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time() + 3600
+                            self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] = 0
                             continue
                         else:
                             # SMTP server is available, return its address
                             return smtp_server
-                    elif self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] <= time.time() + 60 and self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] >= time.time():
-                        self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] = 0
-                        return smtp_server
                     else:
                         continue
                 else:
@@ -376,16 +376,14 @@ class cSMTP():
             # Check if the SMTP server is available
             if self.__check_proxy(proxy):
                 if proxy in self.timeoutProxies:
-                    if self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] > time.time() + 60:
+                    if self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] < time.time():
                         if self.timeoutProxies[self.timeoutProxies.index(proxy)]['num_sent_with_proxy'] == self.max_emails_per_session:
                             self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] = time.time() + 3600
+                            self.timeoutProxies[self.timeoutProxies.index(proxy)]['num_sent_with_proxy'] = 0
                             continue
                         else:
                             # Proxy server is available, return its address
                             return proxy
-                    elif self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] <= time.time() + 60 and self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] >= time.time():
-                        self.timeoutProxies[self.timeoutProxies.index(proxy)]['num_sent_with_proxy'] = 0
-                        return proxy
                     else:
                         continue
                 else:
@@ -505,7 +503,7 @@ class cSMTP():
 
         # Save live emails to disk
         print(f'Saving live emails to disk...')
-        live_emails_filename = "/live_emails_" + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        live_emails_filename = "/live_emails_" + datetime.now().strftime("%Y-%m-%d") + ".txt"
         live_mails_path = str(Path(__file__).parent.absolute()) + live_emails_filename
         with open(live_mails_path, 'w') as fp:
             for live_email in self.live_emails_list:
@@ -515,7 +513,7 @@ class cSMTP():
 
         # Save error SMTP servers to disk
         print(f'Saving error SMTP servers to disk...')
-        error_smtp_servers_filename = "/error_SMTP_servers_" + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        error_smtp_servers_filename = "/error_SMTP_servers_" + datetime.now().strftime("%Y-%m-%d") + ".txt"
         error_smtp_servers_path = str(Path(__file__).parent.absolute()) + error_smtp_servers_filename
         with open(error_smtp_servers_path, 'w') as fp:
             for error_smtp_server in self.error_smtp_servers:
@@ -525,7 +523,7 @@ class cSMTP():
 
         # Save error proxies to disk
         print(f'Saving error proxies to disk...')
-        error_proxies_filename = "/error_proxies_" + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        error_proxies_filename = "/error_proxies_" + datetime.now().strftime("%Y-%m-%d") + ".txt"
         error_proxies_path = str(Path(__file__).parent.absolute()) + error_proxies_filename
         with open(error_proxies_path, 'w') as fp:
             for error_proxy in self.error_proxies:
@@ -542,6 +540,9 @@ class cSMTP():
         sublists_test_mails = self.__even_split(self.email_test_list)
         sublists_imaps = self.__even_split(self.imaps)
 
+        print('Sending emails...')
+        print("All messages won't be shown in console anymore. It will be shown in the logs/logs.txt")
+
         # Start sending emails on different threads
         for i in range(0, len(sublists_smtps)):
             sublist_smtps = sublists_smtps[i]
@@ -549,10 +550,20 @@ class cSMTP():
             sublist_mails = sublists_mails[i]
             sublist_test_mails = sublists_test_mails[i]
             sublist_imaps = sublists_imaps[i]
+
+            threads = []
+
             # Create the thread
-            pool = concurrent.futures.ThreadPoolExecutor()
-            pool.submit(self.__send_emails(sublist_mails, self.smtps, sublist_imaps, self.proxies, self.skip_verify))
-    
+            thread = threading.Thread(
+                target=self.__send_emails, args=(sublist_mails, self.smtps, sublist_imaps, self.proxies, self.skip_verify), daemon=True)
+            # Start the thread
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            thread.start()
+            threads.append(thread)
+
+            for thread in threads:
+                thread.join()
+
     def start(self):
         '''Start sending emails'''
         print('Creating many threads to send emails...')
