@@ -1,2 +1,0 @@
-{'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'httpsOrNot': False, 'retryCount': 1}
-{'host': '208.99.88.129', 'port': '13939', 'type': 'socks4', 'httpsOrNot': False, 'retryCount': 1}
