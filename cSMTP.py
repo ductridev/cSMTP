@@ -18,7 +18,7 @@ import random
 from utils.logger import logger
 
 class cSMTP():
-    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, message_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False, html_email=False, skip_verify=False):
+    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, message_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False, html_email=False, skip_verify=False, proxy_retry = 5, smtp_retry = 5):
         '''Initializes custom SMTP class'''
         self.proxies = []
         self.smtps = []
@@ -76,6 +76,10 @@ class cSMTP():
 
         # Declare queue object
         self.queue = queue.Queue()
+
+        # Declare max number of retries
+        self.proxy_retry = proxy_retry
+        self.smtp_retry = smtp_retry
 
         # Load proxy list from a file
         proxy_list = cSMTP.load_file(proxies_file)
@@ -305,7 +309,7 @@ class cSMTP():
         '''Define a function to check if SMTP server is active?'''
         try:
             for error_smtp_server in self.error_smtp_servers:
-                if error_smtp_server['host'] == smtp_server['host'] and error_smtp_server['port'] == smtp_server['port']:
+                if error_smtp_server['host'] == smtp_server['host'] and error_smtp_server['port'] == smtp_server['port'] and error_smtp_server['retryCount'] == self.smtp_retry:
                     return False
                 
             host, port = smtp_server['host'], int(smtp_server['port'])
@@ -316,10 +320,14 @@ class cSMTP():
             smtp_conn.quit()
             return True
         except Exception as e:
-            self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port']})
-            # SMTP server is down or unreachable
             logger.error(f"SMTP server {smtp_server} is down or unreachable.")
             logger.error(traceback.format_exc(e))
+            for error_smtp_server in self.error_smtp_servers:
+                if error_smtp_server['host'] == smtp_server['host'] and error_smtp_server['port'] == smtp_server['port']:
+                    error_smtp_server['retryCount'] += 1
+                    return False
+            self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port'], 'retryCount': 0})
+            # SMTP server is down or unreachable
             return False
 
     def __choose_smtp_server(self, smtp_list):
@@ -353,7 +361,7 @@ class cSMTP():
         '''Define a function to check if proxy is working or not?'''
         try:
             for error_proxy in self.error_proxies:
-                if error_proxy['host'] == proxy['host'] and error_proxy['port'] == proxy['port'] and error_proxy['type'] == proxy['type'] and error_proxy['httpsOrNot'] == proxy["https"]:
+                if error_proxy['host'] == proxy['host'] and error_proxy['port'] == proxy['port'] and error_proxy['type'] == proxy['type'] and error_proxy['httpsOrNot'] == proxy["https"] and error_proxy["retryCount"] == self.proxy_retry:
                     return False
             if proxy['https']:
                 response = requests.get('https://www.google.com/', proxies={'https': f'{proxy["type"]}://{proxy["host"]}:{proxy["port"]}'})
@@ -363,10 +371,15 @@ class cSMTP():
                 logger.info(f"Proxy {proxy} status: {response.status_code}")
             return True
         except requests.exceptions.RequestException as e:
-            self.error_proxies.append({'host': proxy['host'], 'port': proxy['port'], 'type': proxy['type'], 'httpsOrNot': proxy["https"]})
-            # Proxy is down or unreachable
             logger.error(f"Proxy {proxy} is down or unreachable.")
             logger.error(f"Error: {e}")
+            for error_proxy in self.error_proxies:
+                if error_proxy['host'] == proxy['host'] and error_proxy['port'] == proxy['port'] and error_proxy['type'] == proxy['type'] and error_proxy['httpsOrNot'] == proxy["https"]:
+                    error_proxy["retryCount"] += 1
+                    return False
+
+            self.error_proxies.append({'host': proxy['host'], 'port': proxy['port'], 'type': proxy['type'], 'httpsOrNot': proxy["https"], "retryCount": 0})
+            # Proxy is down or unreachable
             return False
 
     def __choose_proxy(self, proxies):
@@ -488,8 +501,8 @@ class cSMTP():
         print(f'Number of sent emails: {len(self.live_emails_list)}')
         print(f'Number of emails sent without proxy: {self.num_sent_through_smtp_server}')
         print(f'Number of emails sent with proxy: {self.num_sent_through_proxies}')
-        print(f'Number of error SMTP servers: {len(self.error_smtp_servers)}')
-        print(f'Number of error proxies: {len(self.error_proxies)}')
+        # print(f'Number of error SMTP servers: {len(self.error_smtp_servers)}')
+        # print(f'Number of error proxies: {len(self.error_proxies)}')
 
         # Save dead emails to disk
         print(f'Saving dead emails to disk...')
@@ -567,9 +580,7 @@ class cSMTP():
     def start(self):
         '''Start sending emails'''
         print('Creating many threads to send emails...')
-        while True:
-            self.create_thread()
-            time.sleep(60)
+        self.create_thread()
     
     @staticmethod
     def auto_unsubscribe(imap_server, username, password, unsubscribe_link):

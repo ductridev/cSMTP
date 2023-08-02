@@ -24,6 +24,8 @@ if __name__ == '__main__':
                         no_real_send=data['no_real_send'],
                         html_email=data['html_email'],
                         skip_verify=data['skip_verify'],
+                        proxy_retry=data['proxy_retry'],
+                        smtp_retry=data['smtp_retry'],
                         )
             smtp.start()
     except Exception as e:
