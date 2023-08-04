@@ -18,7 +18,7 @@ import random
 from utils.logger import logger
 
 class cSMTP():
-    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, message_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False, html_email=False, skip_verify=False, proxy_retry = 5, smtp_retry = 5):
+    def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, message_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False, html_email=False, skip_verify=False, proxy_retry = 5, smtp_retry = 5, proxy_only = False):
         '''Initializes custom SMTP class'''
         self.proxies = []
         self.smtps = []
@@ -80,6 +80,9 @@ class cSMTP():
         # Declare max number of retries
         self.proxy_retry = proxy_retry
         self.smtp_retry = smtp_retry
+
+        #Declare send with proxy only
+        self.proxy_only = proxy_only
 
         # Load proxy list from a file
         proxy_list = cSMTP.load_file(proxies_file)
@@ -230,17 +233,20 @@ class cSMTP():
                         smtp_conn = smtplib.SMTP(proxy['host'], proxy['port'], timeout=30)
                 else:
                     logger.warn("No proxies found.")
-                    logger.warn("Will try to continue send email without proxy.")
+                    if self.proxy_only == False:
+                        logger.warn("Will try to continue send email without proxy.")
 
-                # Choose an available SMTP server
-                smtp_server = self.__choose_smtp_server(smtp_list)
-                if smtp_server is None:
-                    # No available SMTP servers found, exit the loop
-                    logger.warn("No available SMTP servers found.")
-                    logger.warn("Will retry after 30 seconds.")
-                    time.sleep(30)
-                    continue
-                smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
+                        # Choose an available SMTP server
+                        smtp_server = self.__choose_smtp_server(smtp_list)
+                        if smtp_server is None:
+                            # No available SMTP servers found, exit the loop
+                            logger.warn("No available SMTP servers found.")
+                            logger.warn("Will retry after 30 seconds.")
+                            time.sleep(30)
+                            continue
+                        smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
+                    else:
+                        logger.warn("Send with proxy only is enabled. Skipping use SMTP and try again with proxy")
 
                 try:
                     logger.info(f"Logging in to the SMTP server as {smtp_server['user']}:{smtp_server['password']}")

@@ -16,3 +16,4 @@ html_email: False
 skip_verify: False
 proxy_retry: 5
 smtp_retry: 5
+proxy_only: True

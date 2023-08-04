@@ -26,6 +26,7 @@ if __name__ == '__main__':
                         skip_verify=data['skip_verify'],
                         proxy_retry=data['proxy_retry'],
                         smtp_retry=data['smtp_retry'],
+                        proxy_only=data['proxy_only'],
                         )
             smtp.start()
     except Exception as e:
