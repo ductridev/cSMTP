@@ -213,8 +213,13 @@ class cSMTP():
         # Loop through the email list
         for email in email_list:
             while True:
+                smtp_conn = None
+
                 # Choose an available proxy
                 proxy = self.__choose_proxy(proxies)
+
+                # Choose an available SMTP server
+                smtp_server = self.__choose_smtp_server(smtp_list)
 
                 if proxy is not None: 
                     if proxy['proxy_without_smtp'] == False:
@@ -229,6 +234,8 @@ class cSMTP():
                             socks.wrap_module(smtplib)
                         else:
                             raise TypeError("Unknown proxy type")
+
+                        smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
                     else:
                         smtp_conn = smtplib.SMTP(proxy['host'], proxy['port'], timeout=30)
                 else:
@@ -236,8 +243,6 @@ class cSMTP():
                     if self.proxy_only == False:
                         logger.warn("Will try to continue send email without proxy.")
 
-                        # Choose an available SMTP server
-                        smtp_server = self.__choose_smtp_server(smtp_list)
                         if smtp_server is None:
                             # No available SMTP servers found, exit the loop
                             logger.warn("No available SMTP servers found.")
@@ -248,59 +253,60 @@ class cSMTP():
                     else:
                         logger.warn("Send with proxy only is enabled. Skipping use SMTP and try again with proxy")
 
-                try:
-                    logger.info(f"Logging in to the SMTP server as {smtp_server['user']}:{smtp_server['password']}")
-                    if smtp_server['tls']:
-                        logger.info("Changing SMTP server to TLS mode")
-                        smtp_conn.starttls()
-                        logger.info("Changed SMTP server to TLS mode")
-                    else:
-                        logger.warn("TLS mode is not enabled. Using default mode.")
-                    smtp_conn.login(smtp_server['user'], smtp_server['password'])
-                    logger.info(f"Logged in to SMTP server as {smtp_server['user']}:{smtp_server['password']}")
-                    
-                except smtplib.SMTPNotSupportedError as e:
-                    if "STARTTLS" in str(e):
-                        logger.warn("SMTP not supported TLS mode. Using default mode.")
-                        smtp_conn.ehlo()
+                if smtp_conn is not None:
+                    try:
+                        logger.info(f"Logging in to the SMTP server as {smtp_server['user']}:{smtp_server['password']}")
+                        if smtp_server['tls']:
+                            logger.info("Changing SMTP server to TLS mode")
+                            smtp_conn.starttls()
+                            logger.info("Changed SMTP server to TLS mode")
+                        else:
+                            logger.warn("TLS mode is not enabled. Using default mode.")
                         smtp_conn.login(smtp_server['user'], smtp_server['password'])
                         logger.info(f"Logged in to SMTP server as {smtp_server['user']}:{smtp_server['password']}")
-                except Exception as e:
-                    logger.error(f"Could not login to SMTP server as {smtp_server['user']}:{smtp_server['password']}")
-                    logger.error(traceback.format_exception(e))
-                    break
-                smtp_server['in_used'] = True               
-
-                if self.skip_test == False:
-                    logger.info("Start send test mail")
-                    if i % self.seed_interval == 0:
-                        result = self.__test_seed(smtp_server['from_address'], smtp_server['from_name'], smtp_conn)
-                        if result:
-                            pass
-                        else:
-                            self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port']})
-                            continue
-
-                if self.no_real_send == False:
-                    logger.info("Start send mail")
-                    result = False
-                    if proxy:
-                        # Check if the number of emails sent per session has been exceeded
-                        if self.timeoutProxies[self.timeoutProxies.index(proxy)]["num_sent_with_proxy"] < self.max_emails_per_session:
-                            result = self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, True)
-                    else:
-                        # Check if the max hourly rate per live SMTP has been exceeded
-                        if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] < self.max_emails_per_hour:
-                            result = self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
-                    if result :
-                        smtp_server['in_used'] = False
-                        if proxy:
-                            self.timeoutProxies[self.timeoutProxies.index(proxy)]["num_sent_with_proxy"] += 1
-                        else:
-                            self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] += 1
+                        
+                    except smtplib.SMTPNotSupportedError as e:
+                        if "STARTTLS" in str(e):
+                            logger.warn("SMTP not supported TLS mode. Using default mode.")
+                            smtp_conn.ehlo()
+                            smtp_conn.login(smtp_server['user'], smtp_server['password'])
+                            logger.info(f"Logged in to SMTP server as {smtp_server['user']}:{smtp_server['password']}")
+                    except Exception as e:
+                        logger.error(f"Could not login to SMTP server as {smtp_server['user']}:{smtp_server['password']}")
+                        logger.error(traceback.format_exception(e))
                         break
-                    else :
-                        self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port']})
+                    smtp_server['in_used'] = True               
+
+                    if self.skip_test == False:
+                        logger.info("Start send test mail")
+                        if i % self.seed_interval == 0:
+                            result = self.__test_seed(smtp_server['from_address'], smtp_server['from_name'], smtp_conn)
+                            if result:
+                                pass
+                            else:
+                                self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port']})
+                                continue
+
+                    if self.no_real_send == False:
+                        logger.info("Start send mail")
+                        result = False
+                        if proxy:
+                            # Check if the number of emails sent per session has been exceeded
+                            if self.timeoutProxies[self.timeoutProxies.index(proxy)]["num_sent_with_proxy"] < self.max_emails_per_session:
+                                result = self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, True)
+                        else:
+                            # Check if the max hourly rate per live SMTP has been exceeded
+                            if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] < self.max_emails_per_hour:
+                                result = self.__send(smtp_server['from_address'], smtp_server['from_name'], email['to_address'], email['to_name'], msg, smtp_conn, False)
+                        if result :
+                            smtp_server['in_used'] = False
+                            if proxy:
+                                self.timeoutProxies[self.timeoutProxies.index(proxy)]["num_sent_with_proxy"] += 1
+                            else:
+                                self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] += 1
+                            break
+                        else :
+                            self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port']})
 
 
         # Create report
@@ -311,7 +317,7 @@ class cSMTP():
 
         self.__create_report()
 
-    def __check_smtp_server(self, smtp_server):
+    def __check_smtp_server(self, smtp_server, smtp_conn=None):
         '''Define a function to check if SMTP server is active?'''
         try:
             for error_smtp_server in self.error_smtp_servers:
@@ -320,9 +326,11 @@ class cSMTP():
                 
             host, port = smtp_server['host'], int(smtp_server['port'])
             # Try to connect to SMTP server and check its status
-            smtp_conn = smtplib.SMTP(host, port, timeout=60)
+            if smtp_conn is None:
+                smtp_conn = smtplib.SMTP(host, port, timeout=60)
+
             status = smtp_conn.noop()[0]
-            logger.info(f"SMTP server {smtp_server} status: {status}")
+            logger.info(f"SMTP server {smtp_conn.source_address} status: {status}")
             smtp_conn.quit()
             return True
         except Exception as e:
@@ -336,12 +344,12 @@ class cSMTP():
             # SMTP server is down or unreachable
             return False
 
-    def __choose_smtp_server(self, smtp_list):
+    def __choose_smtp_server(self, smtp_list, smtp_conn=None):
         '''Define a function to check over the list of SMTP servers'''
         # Iterate through the list of SMTP servers
         for smtp_server in smtp_list:
             # Check if the SMTP server is available
-            if self.__check_smtp_server(smtp_server) and smtp_server['in_used'] == False:
+            if self.__check_smtp_server(smtp_server, smtp_conn) and smtp_server['in_used'] == False:
                 if smtp_server in self.timeoutSMTPServers:
                     if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] < time.time():
                         if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] == self.max_emails_per_hour:
@@ -354,9 +362,10 @@ class cSMTP():
                     else:
                         continue
                 else:
-                    self.timeoutSMTPServers.append(smtp_server)
-                    self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] = 0
-                    self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time()
+                    if self.proxy_only == False:
+                        self.timeoutSMTPServers.append(smtp_server)
+                        self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] = 0
+                        self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time()
 
                     # SMTP server is available, return its address
                     return smtp_server
