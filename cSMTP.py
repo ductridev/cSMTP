@@ -315,6 +315,7 @@ class cSMTP():
         self.dead_emails_list += np.unique(result['dead']).tolist()
         self.live_emails_list += np.unique(result['live']).tolist()
 
+        print("Creating a report...")
         self.__create_report()
 
     def __check_smtp_server(self, smtp_server, smtp_conn=None):
