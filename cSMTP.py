@@ -169,6 +169,10 @@ class cSMTP():
                 self.message = self.message.replace(f"{{{macro_field['key']}}}", macro_value)
             
             # Send the email
+            del msg['To']
+            del msg['From']
+            del msg['Subject']
+
             msg['From'] = "{} <{}>".format(from_name, from_address)
             msg['To'] = "{} <{}>".format(to_name, to_address)
             msg['Subject'] = self.subject
@@ -177,9 +181,7 @@ class cSMTP():
             else:
                 msg.set_content(self.message)
             smtp_conn.send_message(msg, from_address, to_address)
-            del msg['To']
-            del msg['From']
-            del msg['Subject']
+
             # Update the number of emails sent for this proxy
             if proxy:
                 self.num_sent_through_proxies += 1
@@ -436,12 +438,15 @@ class cSMTP():
                 msg.add_alternative(MIMEText(html, "html"), subtype='html')
             else:
                 msg.set_content(html)
+            del msg['Subject']
+            del msg['From']
+
             msg['Subject'] = "This is a test email message."
             msg['From'] = "{} <{}>".format(from_name, from_address)
             for email_test in self.email_test_list:
+                del msg['To']
                 msg['To'] = "{} <{}>, ".format(email_test['to_name'], email_test['to_address'])
                 smtp_conn.send_message(msg, from_address, email_test['to_address'])
-                del msg['To']
             return True
         except smtplib.SMTPSenderRefused as e:
             logger.error(traceback.format_exc())
