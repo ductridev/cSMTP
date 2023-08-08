@@ -284,7 +284,7 @@ class cSMTP():
                             if result:
                                 pass
                             else:
-                                self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port']})
+                                self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port'], 'retryCount': 0})
                                 continue
 
                     if self.no_real_send == False:
@@ -306,7 +306,7 @@ class cSMTP():
                                 self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] += 1
                             break
                         else :
-                            self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port']})
+                            self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port'], 'retryCount': 0})
 
 
         # Create report
