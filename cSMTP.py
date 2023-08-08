@@ -190,19 +190,19 @@ class cSMTP():
             logger.info(f"Email sent to {to_address} successfully")
             return True
         except smtplib.SMTPSenderRefused as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPServerDisconnected as e:
             smtp_conn.quit()
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPNotSupportedError as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPHeloError as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPConnectError as e:
             smtp_conn.quit()
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except Exception as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         return False
 
     def __send_emails(self, email_list, smtp_list, imap_list, proxies, skip_verify=False):
@@ -273,7 +273,7 @@ class cSMTP():
                             logger.info(f"Logged in to SMTP server as {smtp_server['user']}:{smtp_server['password']}")
                     except Exception as e:
                         logger.error(f"Could not login to SMTP server as {smtp_server['user']}:{smtp_server['password']}")
-                        logger.error(traceback.format_exception(e))
+                        logger.error(traceback.format_exc())
                         break
                     smtp_server['in_used'] = True               
 
@@ -335,7 +335,7 @@ class cSMTP():
             return True
         except Exception as e:
             logger.error(f"SMTP server {smtp_server} is down or unreachable.")
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
             for error_smtp_server in self.error_smtp_servers:
                 if error_smtp_server['host'] == smtp_server['host'] and error_smtp_server['port'] == smtp_server['port']:
                     error_smtp_server['retryCount'] += 1
@@ -443,19 +443,19 @@ class cSMTP():
                 del msg['To']
             return True
         except smtplib.SMTPSenderRefused as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPServerDisconnected as e:
             smtp_conn.quit()
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPNotSupportedError as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPHeloError as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except smtplib.SMTPConnectError as e:
             smtp_conn.quit()
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         except Exception as e:
-            logger.error(traceback.format_exception(e))
+            logger.error(traceback.format_exc())
         return False
         
     def __verify_email_list(self, sublist_imaps, sublist_mails, skip_verify=False):
@@ -498,7 +498,7 @@ class cSMTP():
                     # Error occurred - consider email address dead and add to list of dead emails
                     self.dead_emails_list.append(email["to_address"])
                     logger.error(f'Error verifying email {email["to_address"]}: {str(e)}')
-                    logger.error(traceback.format_exception(e))
+                    logger.error(traceback.format_exc())
         logger.info("Checked all dead email addresses!")
 
         return {'dead': dead_emails_list, 'live': live_emails_list}
