@@ -237,6 +237,13 @@ class cSMTP():
                         else:
                             raise TypeError("Unknown proxy type")
 
+                        if smtp_server is None:
+                            # No available SMTP servers found, exit the loop
+                            logger.warn("No available SMTP servers found.")
+                            logger.warn("Will retry after 30 seconds.")
+                            time.sleep(30)
+                            continue
+                        
                         smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
                     else:
                         smtp_conn = smtplib.SMTP(proxy['host'], proxy['port'], timeout=30)
