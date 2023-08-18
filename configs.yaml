@@ -3,13 +3,13 @@ emails_file: "emails_list.txt"
 emails_test_file: "emails_test_list.txt"
 smtp_file: "smtp_list.txt"
 imap_file: "imap_list.txt"
-subject: "Mail sent with cSMTP"
+subject: "get what you need done"
 message_file: "./template/message.txt"
 num_threads: 1
-max_emails_per_session: 2
-max_emails_per_hour: 2
+max_emails_per_session: 100
+max_emails_per_hour: 100
 seed_interval: 5
-macro_fields: [{'key':'hello1','value':['Hi','Hey','Whats up']},{'key':'hello2','value':['Bye','Adios','See you later']}]
+macro_fields: [{'key':'hello1','value':['Hi','Hey','Whats up']},{'key':'hello2','value':['www.quickloanz.live','www.fastloanz.live','www.speedyloanz.live','http://quickloanz.live','http://fastloanz.live','http://speedyloanz.live']}]
 skip_test: True
 no_real_send: False
 html_email: False
