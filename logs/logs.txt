@@ -1,0 +1,91 @@
+SMTP server None status: 250[0m
+Logging in to the SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Changing SMTP server to TLS mode[0m
+Changed SMTP server to TLS mode[0m
+Logged in to SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Start send mail[0m
+Email sent to trihd123@gmail.com successfully[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 1, 'time_reset': 1692582695.652493} status: 200[0m
+Proxy {'host': '208.99.88.129', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False} status: 200[0m
+SMTP server None status: 250[0m
+Logging in to the SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Changing SMTP server to TLS mode[0m
+Changed SMTP server to TLS mode[0m
+Logged in to SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Start send mail[0m
+Email sent to trihd7809@gmail.com successfully[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 0, 'time_reset': 1692582705.6896043} status: 200[0m
+SMTP server None status: 250[0m
+Logging in to the SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Changing SMTP server to TLS mode[0m
+Changed SMTP server to TLS mode[0m
+Logged in to SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Start send mail[0m
+Email sent to trihdde170376@gmail.com successfully[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 1, 'time_reset': 1692582705.6896043} status: 200[0m
+Proxy {'host': '208.99.88.129', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 1, 'time_reset': 1692582706.1972594} status: 200[0m
+SMTP server None status: 250[0m
+No proxies found.[0m
+Send with proxy only is enabled. Skipping use SMTP and try again with proxy[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 0, 'time_reset': 1692582727.7568307} status: 200[0m
+SMTP server None status: 250[0m
+Logging in to the SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Changing SMTP server to TLS mode[0m
+Changed SMTP server to TLS mode[0m
+Logged in to SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Start send mail[0m
+Email sent to mayor420@gmail.com successfully[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 1, 'time_reset': 1692582727.7568307} status: 200[0m
+Proxy {'host': '208.99.88.129', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 0, 'time_reset': 1692582729.1931329} status: 200[0m
+SMTP server None status: 250[0m
+Logging in to the SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Changing SMTP server to TLS mode[0m
+Changed SMTP server to TLS mode[0m
+Logged in to SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Start send mail[0m
+Email sent to 2023043485@txt.att.net successfully[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 0, 'time_reset': 1692582742.480908} status: 200[0m
+SMTP server None status: 250[0m
+Logging in to the SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Changing SMTP server to TLS mode[0m
+Changed SMTP server to TLS mode[0m
+Logged in to SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Start send mail[0m
+Email sent to rahulsachdeva7686@gmail.com successfully[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 1, 'time_reset': 1692582742.480908} status: 200[0m
+Proxy {'host': '208.99.88.129', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 1, 'time_reset': 1692582729.1931329} status: 200[0m
+SMTP server None status: 250[0m
+No proxies found.[0m
+Send with proxy only is enabled. Skipping use SMTP and try again with proxy[0m
+Proxy {'host': '67.220.81.2', 'port': '13939', 'type': 'socks4', 'https': False, 'proxy_without_smtp': False, 'num_sent_with_proxy': 0, 'time_reset': 1692582764.5344932} status: 200[0m
+SMTP server None status: 250[0m
+Logging in to the SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Changing SMTP server to TLS mode[0m
+Changed SMTP server to TLS mode[0m
+Logged in to SMTP server as chinky5@kagoshima-rentacar.com:CxO8KB_1Uw4W[0m
+Start send mail[0m
+Email sent to 6316127777@tmomail.net successfully[0m
+Finding dead email addresses...[0m
+[31mError verifying email 6316127777@tmomail.net: EOF occurred in violation of protocol (_ssl.c:1007)[0m
+[31mTraceback (most recent call last):
+  File "G:\python_learn\cSMTP\cSMTP.py", line 506, in __verify_email_list
+    imap_server = imaplib.IMAP4_SSL(imap_host, imap_port)
+  File "D:\Python3.10\lib\imaplib.py", line 1323, in __init__
+    IMAP4.__init__(self, host, port, timeout)
+  File "D:\Python3.10\lib\imaplib.py", line 202, in __init__
+    self.open(host, port, timeout)
+  File "D:\Python3.10\lib\imaplib.py", line 1336, in open
+    IMAP4.open(self, host, port, timeout)
+  File "D:\Python3.10\lib\imaplib.py", line 312, in open
+    self.sock = self._create_socket(timeout)
+  File "D:\Python3.10\lib\imaplib.py", line 1327, in _create_socket
+    return self.ssl_context.wrap_socket(sock,
+  File "D:\Python3.10\lib\ssl.py", line 513, in wrap_socket
+    return self.sslsocket_class._create(
+  File "D:\Python3.10\lib\ssl.py", line 1071, in _create
+    self.do_handshake()
+  File "D:\Python3.10\lib\ssl.py", line 1342, in do_handshake
+    self._sslobj.do_handshake()
+ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:1007)
+[0m
+Checked all dead email addresses![0m

@@ -326,6 +326,7 @@ class cSMTP():
                         else :
                             self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port'], 'retryCount': 0})
 
+        time.sleep(10)
 
         # Create report
         result = self.__verify_email_list(sublist_imaps=imap_list, sublist_mails=email_list, skip_verify=skip_verify)
@@ -341,6 +342,7 @@ class cSMTP():
         try:
             for error_smtp_server in self.error_smtp_servers:
                 if error_smtp_server['host'] == smtp_server['host'] and error_smtp_server['port'] == smtp_server['port'] and error_smtp_server['retryCount'] == self.smtp_retry:
+                    logger.error(f"SMTP server {error_smtp_server} is exceeded max time retry.")
                     return False
                 
             host, port = smtp_server['host'], int(smtp_server['port'])
@@ -372,7 +374,7 @@ class cSMTP():
                 if smtp_server in self.timeoutSMTPServers:
                     if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] < time.time():
                         if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] == self.max_emails_per_hour:
-                            self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time() + 3600
+                            self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time() + 1
                             self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] = 0
                             continue
                         else:
@@ -396,12 +398,13 @@ class cSMTP():
         try:
             for error_proxy in self.error_proxies:
                 if error_proxy['host'] == proxy['host'] and error_proxy['port'] == proxy['port'] and error_proxy['type'] == proxy['type'] and error_proxy['httpsOrNot'] == proxy["https"] and error_proxy["retryCount"] == self.proxy_retry:
+                    logger.error(f"Proxy {proxy} is exceeded max time retry.")
                     return False
             if proxy['https']:
-                response = requests.get('https://www.google.com/', proxies={'https': f'{proxy["type"]}://{proxy["host"]}:{proxy["port"]}'})
+                response = requests.get('https://www.google.com', proxies={'https': f'{proxy["type"]}://{proxy["host"]}:{proxy["port"]}'})
                 logger.info(f"Proxy {proxy} status: {response.status_code}")
             else :
-                response = requests.get('http://www.google.com/', proxies={'http': f'{proxy["type"]}://{proxy["host"]}:{proxy["port"]}'})
+                response = requests.get('http://www.google.com', proxies={'http': f'{proxy["type"]}://{proxy["host"]}:{proxy["port"]}'})
                 logger.info(f"Proxy {proxy} status: {response.status_code}")
             return True
         except requests.exceptions.RequestException as e:
@@ -425,7 +428,7 @@ class cSMTP():
                 if proxy in self.timeoutProxies:
                     if self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] < time.time():
                         if self.timeoutProxies[self.timeoutProxies.index(proxy)]['num_sent_with_proxy'] == self.max_emails_per_session:
-                            self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] = time.time() + 3600
+                            self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] = time.time() + 1
                             self.timeoutProxies[self.timeoutProxies.index(proxy)]['num_sent_with_proxy'] = 0
                             continue
                         else:
@@ -502,7 +505,11 @@ class cSMTP():
                         if email["to_address"] in dead_emails_list:
                             continue
                         # Check for any bounced messages
-                        imap_server = imaplib.IMAP4_SSL(imap_host, imap_port)
+                        try:
+                            imap_server = imaplib.IMAP4_SSL(imap_host, imap_port)
+                        except Exception as e:
+                            imap_server = imaplib.IMAP4(imap_host, imap_port)
+                            
                         imap_server.login(imap_username, imap_password)  # Only needed if email authentication is required
                         imap_server.select('INBOX')
 
@@ -543,7 +550,7 @@ class cSMTP():
 
         # Save dead emails to disk
         print(f'Saving dead emails to disk...')
-        dead_emails_filename = "/dead_emails_" + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        dead_emails_filename = "/dead_emails_" + datetime.now().strftime("%Y-%m-%d %H-%M-%S") + ".txt"
         dead_emails_path = str(Path(__file__).parent.absolute()) + dead_emails_filename
         with open(dead_emails_path, 'w') as fp:
             for dead_email in self.dead_emails_list:
