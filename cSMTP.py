@@ -534,7 +534,6 @@ class cSMTP():
             imap_username = imap_server['user']
             imap_password = imap_server['password']
             imap_port = imap_server['port'] if imap_server['port'] is not None else 993
-
             imap_conn = None
 
             try:
@@ -545,7 +544,7 @@ class cSMTP():
 
             if imap_conn is not None:
                 imap_conn.login(imap_username, imap_password)  # Only needed if email authentication is required
-                
+
                 for email in sublist_mails:
                     logger.info(f'Verifying email {email["to_address"]}')
                     try:
