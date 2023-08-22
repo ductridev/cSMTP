@@ -544,6 +544,8 @@ class cSMTP():
                 imap_conn = imaplib.IMAP4(imap_host, imap_port)
 
             if imap_conn is not None:
+                imap_conn.login(imap_username, imap_password)  # Only needed if email authentication is required
+                
                 for email in sublist_mails:
                     logger.info(f'Verifying email {email["to_address"]}')
                     try:
@@ -552,7 +554,6 @@ class cSMTP():
                                 continue
                             # Check for any bounced messages
                                 
-                            imap_conn.login(imap_username, imap_password)  # Only needed if email authentication is required
                             imap_conn.select('INBOX')
 
                             # search_criteria = f'(OR SUBJECT "fail" (OR SUBJECT "undeliver" SUBJECT "returned")) (OR FROM "Delivery")'

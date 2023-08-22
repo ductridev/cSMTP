@@ -1,2 +1,0 @@
-{'host': 'smtp.heteml.jp', 'port': '587', 'retryCount': 2}
-{'host': 'smtp.heteml.jp', 'port': '587', 'retryCount': 0}
