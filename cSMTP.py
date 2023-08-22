@@ -215,8 +215,11 @@ class cSMTP():
         # Loop through the email list
         for email in email_list:
             if self.proxy_only == True:
-                    if(len(self.error_proxies) == len(self.proxies)):
-                        break
+                if all(item["retryCount"] == 5 for item in self.error_proxies) == True:
+                    break
+            else:
+                if all(item["retryCount"] == 5 for item in self.error_smtp_servers) == True:
+                    break
 
             while True:
                 smtp_conn = None
@@ -234,7 +237,10 @@ class cSMTP():
                     smtp_server = None
 
                 if self.proxy_only == True:
-                    if(len(self.error_proxies) == len(self.proxies)):
+                    if all(item["retryCount"] == 5 for item in self.error_proxies) == True:
+                        break
+                else:
+                    if all(item["retryCount"] == 5 for item in self.error_smtp_servers) == True:
                         break
 
                 if proxy is not None: 
@@ -436,6 +442,7 @@ class cSMTP():
                 logger.info(f"Proxy {proxy} status: {response.status_code}")
             return True
         except requests.exceptions.RequestException as e:
+            # Proxy is down or unreachable
             logger.error(f"Proxy {proxy} is down or unreachable.")
             logger.error(f"Error: {e}")
             for error_proxy in self.error_proxies:
@@ -443,8 +450,7 @@ class cSMTP():
                     error_proxy["retryCount"] += 1
                     return False
 
-            self.error_proxies.append({'host': proxy['host'], 'port': proxy['port'], 'type': proxy['type'], 'httpsOrNot': proxy["https"], "retryCount": 0})
-            # Proxy is down or unreachable
+            self.error_proxies.append({'host': proxy['host'], 'port': proxy['port'], 'type': proxy['type'], 'httpsOrNot': proxy["https"], "retryCount": 0})            
             return False
 
     def __choose_proxy(self, proxies):
