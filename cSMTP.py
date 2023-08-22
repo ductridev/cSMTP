@@ -16,6 +16,7 @@ import queue
 import numpy as np
 import random
 from utils.logger import logger
+import ssl
 
 class cSMTP():
     def __init__(self, proxies_file, emails_file, emails_test_file, smtp_file, imap_file, subject, message_file, num_threads = 2, max_emails_per_session = 500, max_emails_per_hour = 100, seed_interval = 5, macro_fields = [], skip_test = False, no_real_send = False, html_email=False, skip_verify=False, proxy_retry = 5, smtp_retry = 5, proxy_only = False):
@@ -533,36 +534,43 @@ class cSMTP():
             imap_username = imap_server['user']
             imap_password = imap_server['password']
             imap_port = imap_server['port'] if imap_server['port'] is not None else 993
-            for email in sublist_mails:
-                logger.info(f'Verifying email {email["to_address"]}')
-                try:
-                    if skip_verify is False:
-                        if email["to_address"] in dead_emails_list:
-                            continue
-                        # Check for any bounced messages
-                        try:
-                            imap_server = imaplib.IMAP4_SSL(imap_host, imap_port)
-                        except Exception as e:
-                            imap_server = imaplib.IMAP4(imap_host, imap_port)
-                            
-                        imap_server.login(imap_username, imap_password)  # Only needed if email authentication is required
-                        imap_server.select('INBOX')
 
-                        # search_criteria = f'(OR SUBJECT "fail" (OR SUBJECT "undeliver" SUBJECT "returned")) (OR FROM "Delivery")'
-                        search_criteria = f'HEADER "X-Failed-Recipients" "{email["to_address"]}"'
-                        result, data = imap_server.search(None, search_criteria)
+            imap_conn = None
 
-                        if result == 'OK' and data[0] != b'':
-                            # Email bounced - add email address to list of dead emails
-                            dead_emails_list.append(email["to_address"])
-                        else:
-                            live_emails_list.append(email["to_address"])
+            try:
+                context = ssl.create_default_context()
+                imap_conn = imaplib.IMAP4_SSL(imap_host, imap_port, ssl_context=context)
+            except Exception as e:
+                imap_conn = imaplib.IMAP4(imap_host, imap_port)
 
-                except Exception as e:
-                    # Error occurred - consider email address dead and add to list of dead emails
-                    self.dead_emails_list.append(email["to_address"])
-                    logger.error(f'Error verifying email {email["to_address"]}: {str(e)}')
-                    logger.error(traceback.format_exc())
+            if imap_conn is not None:
+                for email in sublist_mails:
+                    logger.info(f'Verifying email {email["to_address"]}')
+                    try:
+                        if skip_verify is False:
+                            if email["to_address"] in dead_emails_list:
+                                continue
+                            # Check for any bounced messages
+                                
+                            imap_conn.login(imap_username, imap_password)  # Only needed if email authentication is required
+                            imap_conn.select('INBOX')
+
+                            # search_criteria = f'(OR SUBJECT "fail" (OR SUBJECT "undeliver" SUBJECT "returned")) (OR FROM "Delivery")'
+                            search_criteria = f'HEADER "X-Failed-Recipients" "{email["to_address"]}"'
+                            result, data = imap_conn.search(None, search_criteria)
+
+                            if result == 'OK' and data[0] != b'':
+                                # Email bounced - add email address to list of dead emails
+                                dead_emails_list.append(email["to_address"])
+                            else:
+                                live_emails_list.append(email["to_address"])
+
+                    except Exception as e:
+                        # Error occurred - consider email address dead and add to list of dead emails
+                        self.dead_emails_list.append(email["to_address"])
+                        logger.error(f'Error verifying email {email["to_address"]}: {str(e)}')
+                        logger.error(traceback.format_exc())
+
         logger.info("Checked all dead email addresses!")
 
         return {'dead': dead_emails_list, 'live': live_emails_list}
@@ -572,7 +580,7 @@ class cSMTP():
             Create reports
         """
 
-        self.live_emails_list = [x for x in self.live_emails_list if x not in self.dead_emails_list]
+        self.dead_emails_list = [x for x in self.dead_emails_list if x not in self.live_emails_list]
 
         # Print the reporting
         print('All emails had been sent. There is the report: ')
