@@ -214,14 +214,28 @@ class cSMTP():
         
         # Loop through the email list
         for email in email_list:
+            if self.proxy_only == True:
+                    if(len(self.error_proxies) == len(self.proxies)):
+                        break
+
             while True:
                 smtp_conn = None
 
                 # Choose an available proxy
                 proxy = self.__choose_proxy(proxies)
 
-                # Choose an available SMTP server
-                smtp_server = self.__choose_smtp_server(smtp_list)
+                if proxy is not None and self.proxy_only == True:
+                    # Choose an available SMTP server
+                    smtp_server = self.__choose_smtp_server(smtp_list)
+                elif proxy is None and self.proxy_only == False:
+                    # Choose an available SMTP server
+                    smtp_server = self.__choose_smtp_server(smtp_list)
+                else:
+                    smtp_server = None
+
+                if self.proxy_only == True:
+                    if(len(self.error_proxies) == len(self.proxies)):
+                        break
 
                 if proxy is not None: 
                     try:
@@ -242,13 +256,21 @@ class cSMTP():
                                 # No available SMTP servers found, exit the loop
                                 logger.warn("No available SMTP servers found.")
                                 logger.warn("Will retry after 30 seconds.")
-                                time.sleep(30)
+                                time.sleep(2)
                                 continue
                             
                             smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
                         else:
                             smtp_conn = smtplib.SMTP(proxy['host'], proxy['port'], timeout=30)
                     except socks.GeneralProxyError as e:
+                        logger.error(f"Proxy error: {e.msg}")
+                        logger.error(traceback.format_exc())
+                        if proxy['proxy_without_smtp'] == False:
+                            self.error_smtp_servers.append({'host': smtp_server['host'], 'port': smtp_server['port'], 'retryCount': 0})
+                        else:
+                            self.error_proxies.append({'host': proxy['host'], 'port': proxy['port'], 'type': proxy['type'], 'httpsOrNot': proxy["https"], "retryCount": 0})
+                        break
+                    except Exception as e:
                         logger.error(f"Proxy error: {e.msg}")
                         logger.error(traceback.format_exc())
                         if proxy['proxy_without_smtp'] == False:
@@ -265,11 +287,13 @@ class cSMTP():
                             # No available SMTP servers found, exit the loop
                             logger.warn("No available SMTP servers found.")
                             logger.warn("Will retry after 30 seconds.")
-                            time.sleep(30)
+                            time.sleep(2)
                             continue
                         smtp_conn = smtplib.SMTP(smtp_server['host'], smtp_server['port'], timeout=30)
                     else:
                         logger.warn("Send with proxy only is enabled. Skipping use SMTP and try again with proxy")
+                        logger.warn("Will retry after 30 seconds.")
+                        time.sleep(2)
 
                 if smtp_conn is not None:
                     try:
@@ -337,7 +361,7 @@ class cSMTP():
         print("Creating a report...")
         self.__create_report()
 
-    def __check_smtp_server(self, smtp_server, smtp_conn=None):
+    def __check_smtp_server(self, smtp_server):
         '''Define a function to check if SMTP server is active?'''
         try:
             for error_smtp_server in self.error_smtp_servers:
@@ -347,11 +371,15 @@ class cSMTP():
                 
             host, port = smtp_server['host'], int(smtp_server['port'])
             # Try to connect to SMTP server and check its status
-            if smtp_conn is None:
-                smtp_conn = smtplib.SMTP(host, port, timeout=60)
+
+            smtp_conn = smtplib.SMTP(host, port, timeout=60)
 
             status = smtp_conn.noop()[0]
-            logger.info(f"SMTP server {smtp_conn.source_address} status: {status}")
+            if smtp_conn.source_address is None:
+                logger.info(f"SMTP server {smtp_conn.source_address} status: {status}")
+            else :
+                logger.info(f"SMTP server {smtp_conn.sock} status: {status}")
+
             smtp_conn.quit()
             return True
         except Exception as e:
@@ -365,16 +393,16 @@ class cSMTP():
             # SMTP server is down or unreachable
             return False
 
-    def __choose_smtp_server(self, smtp_list, smtp_conn=None):
+    def __choose_smtp_server(self, smtp_list):
         '''Define a function to check over the list of SMTP servers'''
         # Iterate through the list of SMTP servers
         for smtp_server in smtp_list:
             # Check if the SMTP server is available
-            if self.__check_smtp_server(smtp_server, smtp_conn) and smtp_server['in_used'] == False:
+            if self.__check_smtp_server(smtp_server) and smtp_server['in_used'] == False:
                 if smtp_server in self.timeoutSMTPServers:
                     if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] < time.time():
                         if self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] == self.max_emails_per_hour:
-                            self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time() + 1
+                            self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['time_reset'] = time.time() + 60
                             self.timeoutSMTPServers[self.timeoutSMTPServers.index(smtp_server)]['num_sent_without_proxy'] = 0
                             continue
                         else:
@@ -428,7 +456,7 @@ class cSMTP():
                 if proxy in self.timeoutProxies:
                     if self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] < time.time():
                         if self.timeoutProxies[self.timeoutProxies.index(proxy)]['num_sent_with_proxy'] == self.max_emails_per_session:
-                            self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] = time.time() + 1
+                            self.timeoutProxies[self.timeoutProxies.index(proxy)]['time_reset'] = time.time() + 60
                             self.timeoutProxies[self.timeoutProxies.index(proxy)]['num_sent_with_proxy'] = 0
                             continue
                         else:
@@ -500,6 +528,7 @@ class cSMTP():
             imap_password = imap_server['password']
             imap_port = imap_server['port'] if imap_server['port'] is not None else 993
             for email in sublist_mails:
+                logger.info(f'Verifying email {email["to_address"]}: {str(e)}')
                 try:
                     if skip_verify is False:
                         if email["to_address"] in dead_emails_list:

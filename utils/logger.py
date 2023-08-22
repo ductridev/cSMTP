@@ -1,8 +1,10 @@
 import logging
 import logging.handlers
+import multiprocessing_logging
 
 logpath = "logs/"
 filename = "logs.txt"
+
 
 class ColorFormatter(logging.Formatter):
     """Logging Formatter to add colors to log messages"""
@@ -25,14 +27,20 @@ class ColorFormatter(logging.Formatter):
 
 # datefmt='%m/%d/%Y %I:%M:%S %p'
 
-# Create a logger and set the level
-logger = logging.getLogger("cSMTP")
-logger.setLevel(logging.INFO)
 
 # Create a rotating file handler and set the formatter
-file_handler = logging.handlers.RotatingFileHandler(filename=logpath+filename, mode='w', maxBytes=512000, backupCount=4)
+file_handler = logging.handlers.RotatingFileHandler(
+    filename=logpath+filename, mode='w', maxBytes=512000000, backupCount=4)
 file_formatter = ColorFormatter()
 file_handler.setFormatter(file_formatter)
 
 # Add the file handler to the logger
-logger.addHandler(file_handler)
+logging.basicConfig(handlers=[
+    file_handler
+])
+
+multiprocessing_logging.install_mp_handler()
+
+# Create a logger and set the level
+logger = logging.getLogger("cSMTP")
+logger.setLevel(logging.INFO)

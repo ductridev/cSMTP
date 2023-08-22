@@ -2,3 +2,4 @@ PySocks
 requests
 numpy
 pyyaml
+multiprocessing_logging
