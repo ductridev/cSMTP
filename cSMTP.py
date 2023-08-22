@@ -215,10 +215,10 @@ class cSMTP():
         # Loop through the email list
         for email in email_list:
             if self.proxy_only == True:
-                if all(item["retryCount"] == 5 for item in self.error_proxies) == True:
+                if len(self.error_proxies) == len(self.proxies) and all(item["retryCount"] == 5 for item in self.error_proxies) == True:
                     break
             else:
-                if all(item["retryCount"] == 5 for item in self.error_smtp_servers) == True:
+                if len(self.error_smtp_servers) == len(self.smtps) and all(item["retryCount"] == 5 for item in self.error_smtp_servers) == True:
                     break
 
             while True:
@@ -237,10 +237,10 @@ class cSMTP():
                     smtp_server = None
 
                 if self.proxy_only == True:
-                    if all(item["retryCount"] == 5 for item in self.error_proxies) == True:
+                    if len(self.error_proxies) == len(self.proxies) and all(item["retryCount"] == 5 for item in self.error_proxies) == True:
                         break
                 else:
-                    if all(item["retryCount"] == 5 for item in self.error_smtp_servers) == True:
+                    if len(self.error_smtp_servers) == len(self.smtps) and all(item["retryCount"] == 5 for item in self.error_smtp_servers) == True:
                         break
 
                 if proxy is not None: 
