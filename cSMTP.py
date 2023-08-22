@@ -534,7 +534,7 @@ class cSMTP():
             imap_password = imap_server['password']
             imap_port = imap_server['port'] if imap_server['port'] is not None else 993
             for email in sublist_mails:
-                logger.info(f'Verifying email {email["to_address"]}: {str(e)}')
+                logger.info(f'Verifying email {email["to_address"]}')
                 try:
                     if skip_verify is False:
                         if email["to_address"] in dead_emails_list:
